@@ -1,0 +1,128 @@
+---
+title: "Choosing color palettes"
+output: html_document
+---
+
+```{r opts}
+knitr::opts_chunk$set(
+  fig.width = 8, fig.asp = 0.618,
+  fig.retina = 2, dpi = 150,
+  out.width = "80%"
+)
+```
+
+```{r packages}
+library(tidyverse)
+library(here)
+library(colorspace)   # for improved color palettes
+library(scales)       # for improved labels
+library(ggthemes)     # for scale_color_colorblind()
+
+theme_set(theme_classic(base_size = 14))
+```
+
+## Import birth data
+
+```{r}
+births <- read_rds(here("data", "births.Rds"))
+births
+```
+
+## Create a bar plot of average births by weekday
+
+```{r}
+total_births_weekday <- births %>%
+  group_by(day_of_week) %>%
+  summarize(total = sum(births))
+
+p_day_of_week <- ggplot(
+  data = total_births_weekday,
+  mapping = aes(x = day_of_week, y = total, fill = day_of_week)
+) +
+  geom_col() +
+  # Turn off the fill legend because it's redundant
+  guides(fill = "none")
+p_day_of_week
+```
+
+#### Choose a sequential color palette using `colorspace`
+
+```{r}
+p_day_of_week + scale_fill_discrete_sequential(palette = "Oranges")
+p_day_of_week + scale_fill_discrete_sequential(palette = "Viridis")
+p_day_of_week + scale_fill_discrete_sequential(palette = "Mako")
+p_day_of_week + scale_fill_discrete_sequential(palette = "Hawaii")
+```
+
+#### Highlight the weekend bars
+
+Choose an alternative to the default palette.
+
+```{r}
+p_weekend <- total_births_weekday %>%
+  mutate(weekend = day_of_week %in% c("Saturday", "Sunday")) %>%
+  ggplot(mapping = aes(x = day_of_week, y = total, fill = weekend)) +
+  geom_col() +
+  # Turn off the fill legend because it's redundant
+  guides(fill = "none")
+p_weekend
+
+p_weekend + scale_fill_discrete_qualitative(palette = "Warm")
+p_weekend + scale_fill_manual(values = c("grey", "orange"))
+p_weekend + scale_fill_colorblind()
+```
+
+## Create a heatmap showing average number of births by day of year
+
+```{r}
+avg_births_month_day <- births %>%
+  group_by(month, date_of_month_categorical) %>%
+  summarize(avg_births = mean(births))
+avg_births_month_day
+
+birth_days_plot <- ggplot(
+  data = avg_births_month_day,
+  # By default, the y-axis will have December at the top, so use fct_rev() to reverse it
+  mapping = aes(x = date_of_month_categorical, y = fct_rev(month), fill = avg_births)
+) +
+  geom_tile() +
+  # Add nice labels
+  labs(
+    x = "Day of the month", y = NULL,
+    title = "Average births per day",
+    subtitle = "1994-2014",
+    fill = "Average births"
+  ) +
+  # Force all the tiles to have equal widths and heights
+  coord_equal()
+birth_days_plot
+```
+
+#### Modify the plot to use different color palettes
+
+```{r}
+# single hue palettes
+birth_days_plot + scale_fill_continuous_sequential(palette = "Grays")
+birth_days_plot + scale_fill_continuous_sequential(palette = "Greens 3")
+
+# multi hue palettes
+birth_days_plot + scale_fill_continuous_sequential(palette = "Viridis")
+birth_days_plot + scale_fill_continuous_sequential(palette = "Mako")
+birth_days_plot + scale_fill_continuous_sequential(palette = "OrRd")
+birth_days_plot + scale_fill_continuous_sequential(palette = "YlGnBu")
+```
+
+```{r}
+# using viridis directly
+library(viridis)
+birth_days_plot + scale_fill_viridis_c()
+
+# using colorspace - automatically reverses the palette direction
+birth_days_plot + scale_fill_continuous_sequential(palette = "Viridis")
+```
+
+## Session Info
+
+```{r}
+sessioninfo::session_info()
+```

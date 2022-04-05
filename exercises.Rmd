@@ -1,0 +1,119 @@
+---
+title: "Choosing color palettes"
+output: html_document
+---
+
+```{r opts}
+knitr::opts_chunk$set(
+  fig.width = 8, fig.asp = 0.618,
+  fig.retina = 2, dpi = 150,
+  out.width = "80%"
+)
+```
+
+```{r packages}
+library(tidyverse)
+library(here)
+library(colorspace)   # for improved color palettes
+library(scales)       # for improved labels
+library(ggthemes)     # for scale_color_colorblind()
+
+theme_set(theme_classic(base_size = 14))
+```
+
+## Import birth data
+
+```{r}
+births <- read_rds(here("data", "births.Rds"))
+births
+```
+
+## Create a bar plot of average births by weekday
+
+```{r}
+total_births_weekday <- births %>%
+  group_by(day_of_week) %>%
+  summarize(total = sum(births))
+
+p_day_of_week <- ggplot(
+  data = _____,
+  mapping = aes(x = _____, y = _____, fill = _____)
+) +
+  geom______() +
+  # Turn off the fill legend because it's redundant
+  guides(fill = "none")
+p_day_of_week
+```
+
+#### Choose a sequential color palette using `colorspace`
+
+```{r}
+p_day_of_week + _____
+```
+
+#### Highlight the weekend bars
+
+Choose an alternative to the default palette.
+
+```{r}
+p_weekend <- total_births_weekday %>%
+  mutate(weekend = _____) %>%
+  ggplot(mapping = aes(x = day_of_week, y = total, fill = weekend)) +
+  geom_col() +
+  # Turn off the fill legend because it's redundant
+  guides(fill = "none")
+p_weekend
+
+p_weekend + _____
+```
+
+## Create a heatmap showing average number of births by day of year
+
+```{r}
+avg_births_month_day <- births %>%
+  group_by(month, date_of_month_categorical) %>%
+  summarize(avg_births = mean(births))
+avg_births_month_day
+
+birth_days_plot <- ggplot(
+  data = avg_births_month_day,
+  # By default, the y-axis will have December at the top, so use fct_rev() to reverse it
+  mapping = aes(x = _____, y = fct_rev(_____), fill = _____)
+) +
+  geom_tile() +
+  # Add nice labels
+  labs(
+    x = "Day of the month", y = NULL,
+    title = "Average births per day",
+    subtitle = "1994-2014",
+    fill = "Average births"
+  ) +
+  # Force all the tiles to have equal widths and heights
+  coord______()
+birth_days_plot
+```
+
+#### Modify the plot to use different color palettes
+
+```{r}
+# single hue palettes
+birth_days_plot + _____
+
+# multi hue palettes
+birth_days_plot + _____
+```
+
+```{r}
+# using viridis directly
+library(viridis)
+birth_days_plot + scale_fill_viridis_c()
+
+# using colorspace
+birth_days_plot + scale_fill_continuous_sequential(palette = "Viridis")
+```
+
+## Session Info
+
+```{r}
+sessioninfo::session_info()
+```
